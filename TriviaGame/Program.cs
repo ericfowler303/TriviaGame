@@ -157,7 +157,13 @@ namespace TriviaGame
             Console.WriteLine("Pick a category from the choices below:");
             foreach (string categoryText in AllQuestions.Select(x => x.Category).Distinct())
             {
-                Console.WriteLine(categoryText);
+                // If there are more then 10 questions then print the category
+                if (AllQuestions.Where(x => x.Category.ToLower().StartsWith(categoryText.ToLower())).ToList().Count >= 10)
+                {
+                    // Filter those that don't have a category
+                    if(categoryText != string.Empty)
+                        Console.WriteLine(categoryText);
+                }
             }
             Console.WriteLine("Type in the beginning of a Category to select that Category:");
             QuestionEngine(Console.ReadLine());
