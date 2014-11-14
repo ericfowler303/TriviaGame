@@ -28,6 +28,10 @@ namespace TriviaGame
             //The logic for your trivia game happens here
             AllQuestions = GetTriviaList();
 
+            // reset global variables
+            CorrectList.Clear();
+            WrongList.Clear();
+
             // Start the game and ask the user if they want all questions or categories
             PrintIntroScreen();
         }
@@ -38,10 +42,17 @@ namespace TriviaGame
         public static void QuestionEngine(string category)
         {
             int totalQuestions;
+            List<Trivia> possibleQ;
             Random rng = new Random();
             Console.Clear();
-            // Get all questions that haven't been used yet for a category
-            List<Trivia> possibleQ = AllQuestions.Where(x => x.Category.ToLower().StartsWith(category.ToLower())).ToList().Where(y => y.HasBeenUsed == false).ToList();
+            if (category == "0")
+            {
+                // All questions
+                possibleQ = AllQuestions;
+            } else {
+                // Get all questions that haven't been used yet for a category
+                possibleQ = AllQuestions.Where(x => x.Category.ToLower().StartsWith(category.ToLower())).ToList().Where(y => y.HasBeenUsed == false).ToList();
+            }
             Console.WriteLine("How many questions do you want to answer? (max {0} questions)", possibleQ.Count);
             int userInputNum=int.Parse(Console.ReadLine());
             if (userInputNum <= possibleQ.Count)
@@ -58,8 +69,19 @@ namespace TriviaGame
             
             while (totalQuestions >0)
             {
-                
-                AskQuestion(possibleQ.ElementAt(rng.Next(possibleQ.Count)), totalQuestions);
+                List<Trivia> currentQ;
+                // Make sure to get the remaining questions that haven't been used yet
+                if (category == "0")
+                {
+                    // All questions, unused
+                    currentQ = AllQuestions.Where(y => y.HasBeenUsed == false).ToList();
+                }
+                else
+                {
+                    // Questions from a certain category, unused
+                    currentQ = AllQuestions.Where(x => x.Category.ToLower().StartsWith(category.ToLower())).ToList().Where(y => y.HasBeenUsed == false).ToList();
+                }
+                AskQuestion(currentQ.ElementAt(rng.Next(possibleQ.Count)), totalQuestions);
                 totalQuestions--;
             }
 
@@ -75,7 +97,7 @@ namespace TriviaGame
         {
             Console.Clear();
             Console.WriteLine("There are {0} questions to go", questionsToGo);
-            if(currentQuestion.Category!=null) { Console.WriteLine("Category: {0}", currentQuestion.Category);}
+            if(currentQuestion.Category!=null || currentQuestion.Category!=string.Empty) { Console.WriteLine("Category: {0}", currentQuestion.Category);}
             Console.WriteLine("Question: {0}", currentQuestion.Question);
             Console.WriteLine("Type your answer below:");
             string answer = Console.ReadLine();
@@ -117,8 +139,16 @@ namespace TriviaGame
             Console.WriteLine("Do you want to play with all of the questions or just a certain category?");
             Console.Write("Type 1 for all or 2 for categories: ");
             string tempCategoryChoice = Console.ReadLine();
-            PrintCategoryChoiceScreen();
-
+            if (tempCategoryChoice == "1")
+            {
+                // Start game with all questions
+                QuestionEngine("0");
+            }
+            else
+            {
+                // Ask about which category
+                PrintCategoryChoiceScreen();
+            }
 
         }
         private static void PrintCategoryChoiceScreen()
@@ -142,10 +172,11 @@ namespace TriviaGame
             Console.WriteLine("Number Correct: {0}", numCorrect);
             int numWrong = WrongList.Count;
             Console.WriteLine("Number Wrong: {0}", numWrong);
-            Console.WriteLine("Percentage Correct: {0}%", (numCorrect/numWrong));
+            double numPercentage = numCorrect / numWrong;
+            Console.WriteLine("Percentage Correct: {0}%", Math.Round(numPercentage,2));
 
             Console.WriteLine("\nDo you want to play again? (Y for yes, N for no)");
-            if (Console.ReadKey().ToString().ToLower() == "y") { InitGame(); }
+            if("y"==Console.ReadLine().ToString().ToLower()) { InitGame(); }
         }
 
         //This functions gets the full list of trivia questions from the Trivia.txt document
