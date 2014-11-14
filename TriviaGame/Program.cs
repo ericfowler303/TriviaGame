@@ -9,17 +9,144 @@ namespace TriviaGame
 {
     class Program
     {
+        // Lists that will be used at the end to tabulate results page
+        public static List<Trivia> CorrectList = new List<Trivia>();
+        public static List<Trivia> WrongList = new List<Trivia>();
+
+        // Needed for other pieces of logic in the game
+        public static List<Trivia> AllQuestions;
+
         static void Main(string[] args)
         {
-            /*Trivia q = new Trivia("Lyrics: making love to you was never second best*melt with you");
-            Console.WriteLine(q.Category);
-            Console.WriteLine(q.Question);
-            Console.WriteLine(q.Answer);
-            Console.ReadKey(); */
-            //The logic for your trivia game happens here
-            List<Trivia> AllQuestions = GetTriviaList();
+            // Begin the game
+            InitGame();
+            
         }
 
+        public static void InitGame()
+        {
+            //The logic for your trivia game happens here
+            AllQuestions = GetTriviaList();
+
+            // Start the game and ask the user if they want all questions or categories
+            PrintIntroScreen();
+        }
+        /// <summary>
+        /// Function to run the main engine of asking questions until the total # have been asked
+        /// </summary>
+        /// <param name="category">Category, "0" will mean all</param>
+        public static void QuestionEngine(string category)
+        {
+            int totalQuestions;
+            Random rng = new Random();
+            Console.Clear();
+            // Get all questions that haven't been used yet for a category
+            List<Trivia> possibleQ = AllQuestions.Where(x => x.Category.ToLower().StartsWith(category.ToLower())).ToList().Where(y => y.HasBeenUsed == false).ToList();
+            Console.WriteLine("How many questions do you want to answer? (max {0} questions)", possibleQ.Count);
+            int userInputNum=int.Parse(Console.ReadLine());
+            if (userInputNum <= possibleQ.Count)
+            {
+                // User input was less then the total amount of questions
+                totalQuestions = userInputNum;
+            }
+            else
+            {
+                // Just set to max as the user asked for too many questions in the category
+                totalQuestions = possibleQ.Count;
+
+            }
+            
+            while (totalQuestions >0)
+            {
+                
+                AskQuestion(possibleQ.ElementAt(rng.Next(possibleQ.Count)), totalQuestions);
+                totalQuestions--;
+            }
+
+            // Once they have finished print the result screen
+            PrintResults();
+
+        }
+        /// <summary>
+        /// A function to ask a question using a Trivia Object
+        /// </summary>
+        /// <param name="currentQuestion">Trivia obj to ask</param>
+        private static void AskQuestion(Trivia currentQuestion,int questionsToGo)
+        {
+            Console.Clear();
+            Console.WriteLine("There are {0} questions to go", questionsToGo);
+            if(currentQuestion.Category!=null) { Console.WriteLine("Category: {0}", currentQuestion.Category);}
+            Console.WriteLine("Question: {0}", currentQuestion.Question);
+            Console.WriteLine("Type your answer below:");
+            string answer = Console.ReadLine();
+            if (CleanAnswer(answer) == CleanAnswer(currentQuestion.Answer)) {
+                // Correct answer
+                currentQuestion.HasBeenUsed = true;
+                CorrectList.Add(currentQuestion);
+                Console.WriteLine("Correct!");
+                System.Threading.Thread.Sleep(500);
+            }
+            else
+            {
+                // Wrong answer
+                currentQuestion.HasBeenUsed = true;
+                WrongList.Add(currentQuestion);
+                Console.WriteLine("Wrong!");
+                System.Threading.Thread.Sleep(500);
+            }
+
+        }
+        /// <summary>
+        /// Function to clean up a string for better comparision
+        /// </summary>
+        /// <param name="userInput">string to strip down</param>
+        /// <returns>cleaned up string</returns>
+        private static string CleanAnswer(string userInput)
+        {
+            StringBuilder tempString = new StringBuilder();
+            foreach (char letter in userInput)
+            {
+                if (char.IsLetter(letter)) { tempString.Append(letter); }
+            }
+            return tempString.ToString().ToLower();
+        }
+
+        private static void PrintIntroScreen()
+        {
+            Console.Clear();
+            Console.WriteLine("Do you want to play with all of the questions or just a certain category?");
+            Console.Write("Type 1 for all or 2 for categories: ");
+            string tempCategoryChoice = Console.ReadLine();
+            PrintCategoryChoiceScreen();
+
+
+        }
+        private static void PrintCategoryChoiceScreen()
+        {
+            Console.Clear();
+            Console.WriteLine("Pick a category from the choices below:");
+            foreach (string categoryText in AllQuestions.Select(x => x.Category).Distinct())
+            {
+                Console.WriteLine(categoryText);
+            }
+            Console.WriteLine("Type in the beginning of a Category to select that Category:");
+            QuestionEngine(Console.ReadLine());
+
+        }
+
+        private static void PrintResults()
+        {
+            Console.Clear();
+            Console.WriteLine("Thanks for playing, here's how you did:");
+            int numCorrect = CorrectList.Count;
+            Console.WriteLine("Number Correct: {0}", numCorrect);
+            int numWrong = WrongList.Count;
+            Console.WriteLine("Number Wrong: {0}", numWrong);
+            Console.WriteLine("Percentage Correct: {0}%", (numCorrect/numWrong));
+
+            Console.WriteLine("\nDo you want to play again? (Y for yes, N for no)");
+            if (Console.ReadKey().ToString().ToLower() == "y") { InitGame(); }
+        }
 
         //This functions gets the full list of trivia questions from the Trivia.txt document
         static List<Trivia> GetTriviaList()
@@ -45,13 +172,13 @@ namespace TriviaGame
 
     class Trivia
     {
-        //TODO: Fill out the Trivia Object
-
         //The Trivia Object will have 2 properties
         // at a minimum, Question and Answer
         public string Category { get; set; }
         public string Question { get; set; }
         public string Answer { get; set; }
+        public bool HasBeenUsed { get; set; }
+
         //The Constructor for the Trivia object will
         // accept only 1 string parameter.  You will
         // split the question from the answer in your
@@ -60,12 +187,14 @@ namespace TriviaGame
 
         public Trivia(string garbledString)
         {
-            if (garbledString.Contains(":"))
+            this.Category = string.Empty;
+            if (garbledString.Split('*').First().Contains(":"))
             {
                 this.Category = garbledString.Split(':').First().ToString();
             }
             this.Question = garbledString.Split(':').Last().Split('*').First().Trim();
             this.Answer = garbledString.Split('*').Last();
+            this.HasBeenUsed = false;
         }
     }
 }
