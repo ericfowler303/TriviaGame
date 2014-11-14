@@ -41,7 +41,6 @@ namespace TriviaGame
         /// <param name="category">Category, "0" will mean all</param>
         public static void QuestionEngine(string category)
         {
-            int totalQuestions;
             List<Trivia> possibleQ;
             Random rng = new Random();
             Console.Clear();
@@ -51,20 +50,20 @@ namespace TriviaGame
                 possibleQ = AllQuestions;
             } else {
                 // Get all questions that haven't been used yet for a category
-                possibleQ = AllQuestions.Where(x => x.Category.ToLower().StartsWith(category.ToLower())).ToList().Where(y => y.HasBeenUsed == false).ToList();
+                possibleQ = AllQuestions.Where(x => x.Category.ToLower().StartsWith(category.ToLower())).ToList();
             }
             Console.WriteLine("How many questions do you want to answer? (max {0} questions)", possibleQ.Count);
-            int userInputNum=int.Parse(Console.ReadLine());
+            // set to max
+            int userInputNum = possibleQ.Count;
+            int totalQuestions = possibleQ.Count;
+            string userInput = Console.ReadLine();
+            // Make sure a number is coming in
+            try { userInputNum = int.Parse(userInput); }
+            catch {}
             if (userInputNum <= possibleQ.Count)
             {
-                // User input was less then the total amount of questions
+                // User input was less then the total amount of questions, so change the max questions
                 totalQuestions = userInputNum;
-            }
-            else
-            {
-                // Just set to max as the user asked for too many questions in the category
-                totalQuestions = possibleQ.Count;
-
             }
             
             while (totalQuestions >0)
@@ -74,14 +73,17 @@ namespace TriviaGame
                 if (category == "0")
                 {
                     // All questions, unused
-                    currentQ = AllQuestions.Where(y => y.HasBeenUsed == false).ToList();
+                    currentQ = AllQuestions;
                 }
                 else
                 {
                     // Questions from a certain category, unused
-                    currentQ = AllQuestions.Where(x => x.Category.ToLower().StartsWith(category.ToLower())).ToList().Where(y => y.HasBeenUsed == false).ToList();
+                    currentQ = AllQuestions.Where(x => x.Category.ToLower().StartsWith(category.ToLower())).ToList();
                 }
-                AskQuestion(currentQ.ElementAt(rng.Next(possibleQ.Count)), totalQuestions);
+
+                Trivia currentTempQuestion = currentQ.ElementAt(rng.Next(currentQ.Count));
+                AskQuestion(currentTempQuestion, totalQuestions);
+                AllQuestions.Remove(currentTempQuestion);
                 totalQuestions--;
             }
 
@@ -103,7 +105,6 @@ namespace TriviaGame
             string answer = Console.ReadLine();
             if (CleanAnswer(answer) == CleanAnswer(currentQuestion.Answer)) {
                 // Correct answer
-                currentQuestion.HasBeenUsed = true;
                 CorrectList.Add(currentQuestion);
                 Console.WriteLine("Correct!");
                 System.Threading.Thread.Sleep(500);
@@ -111,7 +112,6 @@ namespace TriviaGame
             else
             {
                 // Wrong answer
-                currentQuestion.HasBeenUsed = true;
                 WrongList.Add(currentQuestion);
                 Console.WriteLine("Wrong!");
                 System.Threading.Thread.Sleep(500);
@@ -208,7 +208,6 @@ namespace TriviaGame
         public string Category { get; set; }
         public string Question { get; set; }
         public string Answer { get; set; }
-        public bool HasBeenUsed { get; set; }
 
         //The Constructor for the Trivia object will
         // accept only 1 string parameter.  You will
@@ -225,7 +224,6 @@ namespace TriviaGame
             }
             this.Question = garbledString.Split(':').Last().Split('*').First().Trim();
             this.Answer = garbledString.Split('*').Last();
-            this.HasBeenUsed = false;
         }
     }
 }
