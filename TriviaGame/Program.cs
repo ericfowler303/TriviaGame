@@ -172,7 +172,9 @@ namespace TriviaGame
             Console.WriteLine("Number Correct: {0}", numCorrect);
             int numWrong = WrongList.Count;
             Console.WriteLine("Number Wrong: {0}", numWrong);
-            double numPercentage = (numCorrect / numWrong)*100;
+            int numTotal = numWrong + numCorrect;
+            double numPer = (double)numCorrect / (double)numTotal;
+            double numPercentage = numPer*100.0;
             Console.WriteLine("Percentage Correct: {0}%", Math.Round(numPercentage,2));
 
             Console.WriteLine("\nDo you want to play again? (Y for yes, N for no)");
